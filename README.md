@@ -32,8 +32,8 @@ Afterward, you can run any other command as you might need.
 ```
 Usage: env-tools [OPTIONS] COMMAND [ARGS]...
 
-  Development Toolkit that provides tools for JavaScript and Python
-  applications.
+  Toolkit that helps the installation and configuration of Linux machines for
+  development and execution of applications and OCI-Containers.
 
 Options:
   --help  Show this message and exit.

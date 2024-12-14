@@ -5,7 +5,7 @@ import system
 @click.group()
 def cli():
     """
-    Development Toolkit that provides tools for JavaScript and Python applications.
+    Toolkit that helps the installation and configuration of Linux machines for development and execution of applications and OCI-Containers.
     """
     pass
 
