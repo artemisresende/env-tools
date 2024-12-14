@@ -15,7 +15,6 @@ def cli():
 def setup(dev: bool = False):
     """
     Install infrastructure dependencies and update the system.
-    :return:
     """
     click.echo("Installing dependencies...")
     system.install_dependencies(dev)
@@ -57,8 +56,5 @@ def install_python(version):
 def get_cert(domain, email):
     """
     Get an SSL/TLS certificate for a given domain via Linode API.
-
-    :param email: e-mail required by Certbot
-    :param domain: domain to generate certificate of
     """
     system.request_linode_ssl_cert(domain, email)
