@@ -1,6 +1,6 @@
 # Environment Toolkit
 
-Toolkit that helps the installation and configuration of a Linux machines[^1] to allow development, debugging and execution of Python applications and OCI-Containers.
+Toolkit that helps the installation and configuration of Linux machines[^1] for development and execution of applications and OCI-Containers.
 
 It installs, as dependencies:
 * [Homebrew](https://brew.sh/), as Package Manager (General)
