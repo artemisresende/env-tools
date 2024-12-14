@@ -19,7 +19,7 @@ Optionally:
 
 ## Installation
 
-TBD
+`curl -sSL https://github.com/artemisresende/env-tools/releases/download/v0.1.0/env-tools > ~/.local/bin/env-tools`
 
 ## Getting Started
 
