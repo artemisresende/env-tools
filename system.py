@@ -106,7 +106,6 @@ def request_linode_ssl_cert(domain: str, email: str, wildcard: bool = True):
     :return: None
     """
     import os
-    import shutil
     from pathlib import Path
 
     # Check/create credentials file
@@ -119,27 +118,17 @@ def request_linode_ssl_cert(domain: str, email: str, wildcard: bool = True):
         os.system(f'sudo printf "dns_linode_key = {api_key}\ndns_linode_version = 4\n" > {linode_credential_path}')
 
     # Create a certbot command
-    cmd = (f"certbot certonly --email {email} --agree-tos --non-interactive"
+    cmd = (f"sudo certbot certonly --email {email} --agree-tos --non-interactive"
            " --dns-linode --dns-linode-credentials /etc/letsencrypt/linode.ini"
            " --dns-linode-propagation-seconds 120")
 
     # Add the domains
     if wildcard:
         # Generate a wildcard certificate
-        cmd += f" --domain *. {domain}"
-        cert_dir = "/etc/letsencrypt/live/" + "*." + domain
+        cmd += f" --domain *.{domain}"
     else:
         # Generate a regular certificate
         cmd += f" --domain {domain}"
-        cert_dir = "/etc/letsencrypt/live/" + domain
 
     # Run the Certbot command
     os.system(cmd)
-
-    # Check if the certificate directory exists
-    if os.path.exists(cert_dir):
-        # Copy the certificates
-        for file in os.listdir(cert_dir):
-            shutil.copy(os.path.join(cert_dir, file), os.getcwd())
-    else:
-        click.echo("Certificate directory not found.")
