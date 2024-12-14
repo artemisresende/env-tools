@@ -1,0 +1,53 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Build with PyInstaller
+        run: |
+          poetry run pyinstaller --onefile env-tools.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-tools
+          path: dist/env-tools
+
+      - name: Create release
+        uses: actions/create-release@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ${{ github.event.release.name }}
+          release_body: ${{ github.event.release.body }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: dist/env-tools
+          asset_name: env-tools
+          asset_content_type: application/octet-stream
