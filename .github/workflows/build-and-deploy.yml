@@ -38,9 +38,8 @@ jobs:
       - name: Create release
         uses: actions/create-release@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           release_name: ${{ github.event.release.name }}
-          release_body: ${{ github.event.release.body }}
+          body: ${{ github.event.release.body }}
           draft: false
           prerelease: false
 
