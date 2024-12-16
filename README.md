@@ -63,4 +63,7 @@ Commands:
 `$ env-tools update`
 
 > Note that `update` will ask for privileged permissions via `sudo`.
- 
+
+## Building
+
+`poetry run pyinstaller --onefile env-tools.py`

@@ -35,7 +35,7 @@ def update():
 @click.argument("engine", default="podman-docker", type=click.STRING)
 def enable_containers(engine):
     """
-    Enable an OCI-compatible engine for running containers.
+    Enable an OCI-compatible engine for running infra.
     """
     click.echo(f"Installing Container Engine ({engine})...")
     system.install(packages=[engine])
