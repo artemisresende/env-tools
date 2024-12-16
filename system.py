@@ -1,99 +1,90 @@
+from enum import Enum
+from typing import Optional
+
 import click
 import os
 
 
-def install_dependencies(dev: bool = False):
+def is_executable_available(executable: str) -> bool:
+    """Check if an executable is available at runtime."""
+    return os.system(f"which {executable} > /dev/null 2>&1") == 0
+
+
+class PackageManager:
+    BREW = "brew"
+    ASDF = "asdf"
+    PIP = "pip"
+    APT = "apt"
+    DNF = "dnf"
+    YUM = "yum"
+    APK = "apk"
+
+    @classmethod
+    def system(cls):
+        for pkg in [cls.APT, cls.DNF, cls.YUM, cls.APK]:
+            if is_executable_available(pkg):
+                return pkg
+
+
+def setup_git(name: str, email: str, default_branch: str = "main"):
     """
-    Install dependencies on an environment with bash.
-    :param dev:
+    Setup Git information.
+
+    :param name: name used in commit messages
+    :param email: email used in commit messages
     :return:
     """
-    click.echo("Installing Homebrew...")
-    # https://brew.sh/
-    os.system('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"')
-    os.system('echo "eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"" >> ~/.bashrc')
+    if is_executable_available("git"):
+        os.system(f"git config --global init.defaultBranch {default_branch}")
+        os.system(f"git config --global user.name {name}")
+        os.system(f"git config --global user.email {email}")
+    else:
+        raise RuntimeError("Git is not available at runtime.")
 
-    click.echo("Installing Updater Tool (topgrade)...")
-    os.system('brew install topgrade')
-
-    if dev:
-        click.echo("Installing Runtime Manager (asdf)...")
-        # https://asdf-vm.com/guide/getting-started.html
-        os.system('brew install asdf')
-        os.system('printf "\n. \"$(brew --prefix asdf)/libexec/asdf.sh\"" >> ~/.bashrc')
-        os.system('printf "\n. \"$(brew --prefix asdf)/etc/bash_completion.d/asdf.bash\"" >> ~/.bashrc')
-
-    click.echo("Installing Python Tools...")
-    os.system('curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3')  # https://pip.pypa.io/en/stable/installation/
-
-    if dev:
-        os.system('pip install poetry')
-
-    click.echo("Installing SSL/TLS Certificate Providers...")
-    os.system('pip install certbot python3-certbot-dns-linode')  # Certbot
-    # local certificate provider
-
-
-def install_python(version: str):
+def install(pkg: str,
+            pkg_manager: Optional[PackageManager] = PackageManager.system(),
+            pre_commands: Optional[list[str]] = None,
+            post_commands: Optional[list[str]] = None):
     """
-    Install Python via asdf.
+    Install a package using one of the available package managers.
 
-    :param version: a Python runtime version
+    :param pkg: package name
+    :param pkg_manager: package manager, e.g. 'apt'
+    :param pre_commands: commands to be executed before installation
+    :param post_commands: commands to be executed after installation
+    :return: None
     """
-    assert version
 
-    click.echo(f"Installing Python {version}...")
-    os.system('asdf plugin-add python')
-    os.system(f'asdf install python latest:{version}')
-    os.system(f'asdf global python latest:{version}')
+    queue: list[str] = []
+    use_sudo: bool = True
 
+    if pre_commands:
+        queue += pre_commands
 
-def update():
-    """
-    Update the system via topgrade.
-    """
-    click.echo("Update the system")
-    os.system("topgrade")
+    cmd: Optional[str] = None
+    match pkg_manager:
+        case PackageManager.APT | PackageManager.DNF | PackageManager.YUM:
+            cmd = f"{pkg_manager} install -y {pkg}"
+        case PackageManager.APK:
+            cmd = f"apk add {pkg}"
+        case PackageManager.BREW | PackageManager.ASDF | PackageManager.PIP:
+            cmd = f"{pkg_manager} install {pkg}"
+            use_sudo = False
+        case _:
+            pass
 
+    if cmd:
+        if use_sudo:
+            cmd = f"sudo {cmd}"
 
-def install(packages: list[str]):
-    """
-    Install a package using the default system package manager.
-    It supports apt, dnf, yum and apk.
+        queue += [cmd]
 
-    :param packages: list of packages to be installed
-    """
-    import re
+    if post_commands:
+        queue += post_commands
 
-    # Get the list of packages as string
-    # noinspection RegExpSingleCharAlternation,RegExpRedundantEscape
-    packages_str = re.sub(r"(\[|\]|\"|\'|,)", "", str(packages))  # "['aaa', 'bbb', 'ccc']" -> "aaa bbb ccc"
-
-    # Detect the package manager
-    package_manager = None
-    if os.system("which apt > /dev/null 2>&1") == 0:
-        package_manager = "apt"
-    elif os.system("which dnf > /dev/null 2>&1") == 0:
-        package_manager = "dnf"
-    elif os.system("which yum > /dev/null 2>&1") == 0:
-        package_manager = "yum"
-    elif os.system("which apk > /dev/null 2>&1") == 0:
-        package_manager = "apk"
-
-    if package_manager is None:
-        click.echo(f"Unsupported package manager. Please install {packages_str} manually.")
-        return
-
-    # Run command
-    match package_manager:
-        case "apt":
-            os.system(f"sudo apt install -y {packages_str}")
-        case "dnf":
-            os.system(f"sudo dnf install -y {packages_str}")
-        case "yum":
-            os.system(f"sudo yum install -y {packages_str}")
-        case "apk":
-            os.system(f"sudo apk add {packages_str}")
+    for cmd in queue:
+        if os.system(cmd):
+            break
 
 
 def request_linode_ssl_cert(domain: str, email: str, wildcard: bool = True):
